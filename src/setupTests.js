@@ -1,1 +1,2 @@
-import "@testing-library/jest-dom"; // Extends Jest with additional matchers (e.g., toBeInTheDocument)
+// src/setupTests.js
+import "@testing-library/jest-dom/extend-expect";
