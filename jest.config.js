@@ -1,8 +1,12 @@
-// jest.config.js
 module.exports = {
-  testEnvironment: 'jsdom', // You might need this if you're working with React
+  testEnvironment: "jsdom", // Ensure jsdom is used as the environment
   transform: {
-    '^.+\\.jsx?$': 'babel-jest', // If you're using Babel
+    "^.+\\.[t|j]sx?$": "babel-jest", // Transform JSX/TSX files using Babel
   },
-  moduleFileExtensions: ['js', 'jsx', 'json', 'node'],
+  moduleNameMapper: {
+    "\\.css$": "identity-obj-proxy", // Mock CSS imports
+  },
+  setupFilesAfterEnv: [
+    "@testing-library/jest-dom/extend-expect", // Add custom matchers for testing-library
+  ],
 };

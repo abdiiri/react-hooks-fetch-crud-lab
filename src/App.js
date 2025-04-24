@@ -1,128 +1,83 @@
-// src/App.js
 import React, { useState } from "react";
 
 function App() {
-  const [view, setView] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [formData, setFormData] = useState({
-    prompt: "",
-    answers: ["", "", ""],
-    correctIndex: "0",
-  });
+  const [question, setQuestion] = useState("");
+  const [answers, setAnswers] = useState(["", "", ""]);
+  const [correctIndex, setCorrectIndex] = useState(0);
+  const [submittedQuestions, setSubmittedQuestions] = useState([]); // ✅ new
 
-  const fetchQuestions = async () => {
-    const response = await fetch("http://localhost:4000/questions");
-    const data = await response.json();
-    setQuestions(data);
-  };
-
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-
-    if (name.startsWith("answers-")) {
-      const index = parseInt(name.split("-")[1]);
-      const updatedAnswers = [...formData.answers];
-      updatedAnswers[index] = value;
-      setFormData({ ...formData, answers: updatedAnswers });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     const newQuestion = {
-      prompt: formData.prompt,
-      answers: formData.answers,
-      correctIndex: parseInt(formData.correctIndex),
+      question,
+      answers,
+      correctIndex,
     };
+    console.log(newQuestion);
 
-    const response = await fetch("http://localhost:4000/questions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newQuestion),
-    });
+    // ✅ Save submitted question to state
+    setSubmittedQuestions([...submittedQuestions, newQuestion]);
 
-    const data = await response.json();
-
-    // Add new question to list and switch to "view" mode
-    setQuestions((prev) => [...prev, data]);
-    setView("view");
-
-    // Optionally reset form
-    setFormData({
-      prompt: "",
-      answers: ["", "", ""],
-      correctIndex: "0",
-    });
+    // Reset form (optional)
+    setQuestion("");
+    setAnswers(["", "", ""]);
+    setCorrectIndex(0);
   };
 
   return (
-    <main>
-      <nav>
-        <button onClick={() => setView("new")}>New Question</button>
-        <button
-          onClick={() => {
-            fetchQuestions();
-            setView("view");
-          }}
-        >
-          View Questions
-        </button>
-      </nav>
-
-      {view === "view" && (
-        <section>
-          <h1>Quiz Questions</h1>
-          <ul>
-            {questions.map((q) => (
-              <li key={q.id}>{q.prompt}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {view === "new" && (
-        <form onSubmit={handleSubmit}>
-          <label>
-            Prompt:
-            <input
-              name="prompt"
-              type="text"
-              value={formData.prompt}
-              onChange={handleFormChange}
-            />
-          </label>
-          {formData.answers.map((ans, i) => (
+    <div>
+      <h1>Create a New Question</h1>
+      <form onSubmit={handleSubmit}>
+        <label>
+          Question:
+          <input
+            type="text"
+            placeholder="Enter question"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+          />
+        </label>
+        <div>
+          {answers.map((answer, i) => (
             <label key={i}>
               Answer {i + 1}:
               <input
-                name={`answers-${i}`}
                 type="text"
-                value={ans}
-                onChange={handleFormChange}
+                placeholder={`Answer ${i + 1}`}
+                value={answer}
+                onChange={(e) => {
+                  const updatedAnswers = [...answers];
+                  updatedAnswers[i] = e.target.value;
+                  setAnswers(updatedAnswers);
+                }}
               />
             </label>
           ))}
-          <label>
-            Correct Answer:
-            <select
-              name="correctIndex"
-              value={formData.correctIndex}
-              onChange={handleFormChange}
-            >
-              <option value="0">1</option>
-              <option value="1">2</option>
-              <option value="2">3</option>
-            </select>
-          </label>
-          <button type="submit">Submit Question</button>
-        </form>
-      )}
-    </main>
+        </div>
+        <label>
+          Correct Answer:
+          <select
+            value={correctIndex}
+            onChange={(e) => setCorrectIndex(Number(e.target.value))}
+          >
+            <option value={0}>Answer 1</option>
+            <option value={1}>Answer 2</option>
+            <option value={2}>Answer 3</option>
+          </select>
+        </label>
+        <button type="submit">Submit Question</button>
+      </form>
+
+      {/* ✅ Render submitted questions below the form */}
+      <div>
+        <h2>Submitted Questions</h2>
+        <ul>
+          {submittedQuestions.map((q, i) => (
+            <li key={i}>{q.question}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
 
