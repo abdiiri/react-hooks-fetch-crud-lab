@@ -31,11 +31,13 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const newQuestion = {
       prompt: formData.prompt,
       answers: formData.answers,
       correctIndex: parseInt(formData.correctIndex),
     };
+
     const response = await fetch("http://localhost:4000/questions", {
       method: "POST",
       headers: {
@@ -43,8 +45,19 @@ function App() {
       },
       body: JSON.stringify(newQuestion),
     });
+
     const data = await response.json();
+
+    // Add new question to list and switch to "view" mode
     setQuestions((prev) => [...prev, data]);
+    setView("view");
+
+    // Optionally reset form
+    setFormData({
+      prompt: "",
+      answers: ["", "", ""],
+      correctIndex: "0",
+    });
   };
 
   return (
