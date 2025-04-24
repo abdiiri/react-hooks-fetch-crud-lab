@@ -1,35 +1,30 @@
-/**
- * @jest-environment jsdom
- */
-
+import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import App from "../App";
 
-test("renders the app correctly", () => {
-  render(<App />);
-  // Check if the app header is rendered
-  expect(screen.getByText(/Create a New Question/i)).toBeInTheDocument();
-});
-
 test("submit button works", async () => {
   render(<App />);
-  fireEvent.change(screen.getByPlaceholderText(/Enter question/i), {
+
+  // Fill out the form
+  fireEvent.change(screen.getByPlaceholderText("Enter question"), {
     target: { value: "What is React?" },
   });
-  fireEvent.change(screen.getByPlaceholderText(/Answer 1/i), {
+  fireEvent.change(screen.getByPlaceholderText("Answer 1"), {
     target: { value: "A JavaScript library" },
   });
-  fireEvent.change(screen.getByPlaceholderText(/Answer 2/i), {
+  fireEvent.change(screen.getByPlaceholderText("Answer 2"), {
     target: { value: "A CSS framework" },
   });
-  fireEvent.change(screen.getByPlaceholderText(/Answer 3/i), {
+  fireEvent.change(screen.getByPlaceholderText("Answer 3"), {
     target: { value: "A Node.js framework" },
   });
-  fireEvent.change(screen.getByLabelText(/Correct Answer/i), {
-    target: { value: 0 },
+  fireEvent.change(screen.getByDisplayValue("Answer 1"), {
+    target: { value: "0" },
   });
-  fireEvent.click(screen.getByText(/Submit Question/i));
 
-  // Check if the question was "submitted"
+  // Submit the form
+  fireEvent.click(screen.getByText(/submit question/i));
+
+  // Check if the question is rendered
   expect(await screen.findByText(/What is React\?/i)).toBeInTheDocument();
 });

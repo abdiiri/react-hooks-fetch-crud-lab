@@ -4,7 +4,7 @@ function App() {
   const [question, setQuestion] = useState("");
   const [answers, setAnswers] = useState(["", "", ""]);
   const [correctIndex, setCorrectIndex] = useState(0);
-  const [submittedQuestions, setSubmittedQuestions] = useState([]); // ✅ new
+  const [submittedQuestions, setSubmittedQuestions] = useState([]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -14,11 +14,7 @@ function App() {
       correctIndex,
     };
     console.log(newQuestion);
-
-    // ✅ Save submitted question to state
     setSubmittedQuestions([...submittedQuestions, newQuestion]);
-
-    // Reset form (optional)
     setQuestion("");
     setAnswers(["", "", ""]);
     setCorrectIndex(0);
@@ -68,7 +64,6 @@ function App() {
         <button type="submit">Submit Question</button>
       </form>
 
-      {/* ✅ Render submitted questions below the form */}
       <div>
         <h2>Submitted Questions</h2>
         <ul>
