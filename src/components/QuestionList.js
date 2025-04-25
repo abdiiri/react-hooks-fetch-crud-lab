@@ -1,33 +1,48 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 
-function QuestionList({ refresh }) {
-  const [questions, setQuestions] = useState([]);
-
-  useEffect(() => {
-    let isMounted = true; // Track if the component is mounted
-
-    fetch("http://localhost:4000/questions")
-      .then((res) => res.json())
-      .then((data) => {
-        if (isMounted) {
-          setQuestions(data); // Only update state if the component is still mounted
-        }
-      });
-
-    return () => {
-      isMounted = false; // Cleanup when the component unmounts
-    };
-  }, [refresh]); // Re-fetch when `refresh` changes
-
+function QuestionList({ questions, onDeleteQuestion, onUpdateCorrectAnswer }) {
   return (
-    <section>
-      <h1>Quiz Questions</h1>
-      <ul>
-        {questions.map((question) => (
-          <li key={question.id}>{question.prompt}</li>
-        ))}
-      </ul>
-    </section>
+    <div>
+      <h2>Questions</h2>
+      {questions.length === 0 ? (
+        <p>No questions available.</p>
+      ) : (
+        <ul>
+          {questions.map((question) => (
+            <li key={question.id}>
+              <strong>{question.prompt}</strong>
+              <ul>
+                {question.answers.map((answer, index) => (
+                  <li key={index}>
+                    {answer}{" "}
+                    {index === question.correctIndex ? "(Correct)" : ""}
+                  </li>
+                ))}
+              </ul>
+              <label htmlFor={`correctAnswer-${question.id}`}>
+                Correct Answer:
+              </label>
+              <select
+                id={`correctAnswer-${question.id}`}
+                value={question.correctIndex}
+                onChange={(e) =>
+                  onUpdateCorrectAnswer(question.id, parseInt(e.target.value))
+                }
+              >
+                {question.answers.map((_, index) => (
+                  <option key={index} value={index}>
+                    {index + 1}
+                  </option>
+                ))}
+              </select>
+              <button onClick={() => onDeleteQuestion(question.id)}>
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

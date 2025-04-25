@@ -1,77 +1,92 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import QuestionList from "./components/QuestionList";
+import QuestionForm from "./components/QuestionForm";
 
 function App() {
-  const [question, setQuestion] = useState("");
-  const [answers, setAnswers] = useState(["", "", ""]);
-  const [correctIndex, setCorrectIndex] = useState(0);
-  const [submittedQuestions, setSubmittedQuestions] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [showForm, setShowForm] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newQuestion = {
-      question,
-      answers,
-      correctIndex,
-    };
-    console.log(newQuestion);
-    setSubmittedQuestions([...submittedQuestions, newQuestion]);
-    setQuestion("");
-    setAnswers(["", "", ""]);
-    setCorrectIndex(0);
+  useEffect(() => {
+    fetch("http://localhost:4000/questions")
+      .then((response) => response.json())
+      .then((data) => setQuestions(data))
+      .catch((error) => console.error("Error fetching questions:", error));
+  }, []); // Empty dependency array ensures this runs only once after the initial render
+
+  const handleAddNewQuestionClick = () => {
+    setShowForm(true);
+  };
+
+  const handleViewQuestionsClick = () => {
+    setShowForm(false);
+  };
+
+  const handleAddQuestion = (newQuestion) => {
+    fetch("http://localhost:4000/questions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newQuestion),
+    })
+      .then((response) => response.json())
+      .then((addedQuestion) => {
+        setQuestions([...questions, addedQuestion]);
+        setShowForm(false);
+      })
+      .catch((error) => console.error("Error adding question:", error));
+  };
+
+  const handleDeleteQuestion = (id) => {
+    fetch(`http://localhost:4000/questions/${id}`, {
+      method: "DELETE",
+    })
+      .then((response) => {
+        if (response.ok) {
+          setQuestions(questions.filter((question) => question.id !== id));
+        } else {
+          console.error(`Error deleting question with id ${id}`);
+        }
+      })
+      .catch((error) => console.error("Error deleting question:", error));
+  };
+
+  const handleUpdateCorrectAnswer = (id, correctIndex) => {
+    fetch(`http://localhost:4000/questions/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ correctIndex }),
+    })
+      .then((response) => response.json())
+      .then((updatedQuestion) => {
+        setQuestions(
+          questions.map((question) =>
+            question.id === id ? updatedQuestion : question
+          )
+        );
+      })
+      .catch((error) => console.error("Error updating question:", error));
   };
 
   return (
     <div>
-      <h1>Create a New Question</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Question:
-          <input
-            type="text"
-            placeholder="Enter question"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-          />
-        </label>
-        <div>
-          {answers.map((answer, i) => (
-            <label key={i}>
-              Answer {i + 1}:
-              <input
-                type="text"
-                placeholder={`Answer ${i + 1}`}
-                value={answer}
-                onChange={(e) => {
-                  const updatedAnswers = [...answers];
-                  updatedAnswers[i] = e.target.value;
-                  setAnswers(updatedAnswers);
-                }}
-              />
-            </label>
-          ))}
-        </div>
-        <label>
-          Correct Answer:
-          <select
-            value={correctIndex}
-            onChange={(e) => setCorrectIndex(Number(e.target.value))}
-          >
-            <option value={0}>Answer 1</option>
-            <option value={1}>Answer 2</option>
-            <option value={2}>Answer 3</option>
-          </select>
-        </label>
-        <button type="submit">Submit Question</button>
-      </form>
-
+      <h1>Quiz Admin</h1>
       <div>
-        <h2>Submitted Questions</h2>
-        <ul>
-          {submittedQuestions.map((q, i) => (
-            <li key={i}>{q.question}</li>
-          ))}
-        </ul>
+        <button onClick={handleAddNewQuestionClick}>New Question</button>
+        <button onClick={handleViewQuestionsClick}>View Questions</button>
       </div>
+
+      {showForm && <QuestionForm onAddQuestion={handleAddQuestion} />}
+
+      {!showForm && (
+        <QuestionList
+          questions={questions}
+          onDeleteQuestion={handleDeleteQuestion}
+          onUpdateCorrectAnswer={handleUpdateCorrectAnswer}
+        />
+      )}
     </div>
   );
 }
