@@ -1,40 +1,61 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import App from "../App";
 
-describe("App Component", () => {
-  test("submit button works", async () => {
-    render(<App />);
+// Setup fetch as a mock function
+beforeEach(() => {
+  global.fetch = jest.fn();
+});
 
-    // Click the "New Question" button to show the form
-    fireEvent.click(screen.getByText("New Question"));
+afterEach(() => {
+  jest.resetAllMocks();
+});
 
-    // Fill out the form using the label text
-    fireEvent.change(screen.getByLabelText("Prompt:"), {
-      target: { value: "What is React?" },
-    });
-    fireEvent.change(screen.getByLabelText("Answer 1:"), {
-      target: { value: "A JavaScript library" },
-    });
-    fireEvent.change(screen.getByLabelText("Answer 2:"), {
-      target: { value: "A CSS framework" },
-    });
-    fireEvent.change(screen.getByLabelText("Answer 3:"), {
-      target: { value: "A database system" },
-    });
-    fireEvent.change(screen.getByLabelText("Answer 4:"), {
-      target: { value: "A server-side language" },
-    });
-    fireEvent.change(screen.getByLabelText("Correct Answer Index:"), {
-      target: { value: "1" }, // Assuming '1' corresponds to index 0
-    });
+test("submitting the form calls onAddQuestion and updates the list", async () => {
+  const mockNewQuestion = {
+    id: 1,
+    prompt: "What is React?",
+    answers: ["Library", "Framework", "Language", "Tool"],
+    correctIndex: 0,
+  };
 
-    // Click the "Add Question" button
-    fireEvent.click(screen.getByText("Add Question"));
+  // Setup fetch calls
+  global.fetch
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    }) // First call: GET /questions
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockNewQuestion,
+    }); // Second call: POST /questions
 
-    // You would then add assertions to check if the new question
-    // is displayed in the list or if the API call was made correctly.
-    // For example:
-    // await waitFor(() => screen.getByText('What is React?'));
+  render(<App />);
+  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+  fireEvent.click(screen.getByText("New Question"));
+
+  fireEvent.change(screen.getByLabelText("Prompt:"), {
+    target: { value: mockNewQuestion.prompt },
   });
+  fireEvent.change(screen.getByLabelText("Answer 1:"), {
+    target: { value: mockNewQuestion.answers[0] },
+  });
+  fireEvent.change(screen.getByLabelText("Answer 2:"), {
+    target: { value: mockNewQuestion.answers[1] },
+  });
+  fireEvent.change(screen.getByLabelText("Answer 3:"), {
+    target: { value: mockNewQuestion.answers[2] },
+  });
+  fireEvent.change(screen.getByLabelText("Answer 4:"), {
+    target: { value: mockNewQuestion.answers[3] },
+  });
+  fireEvent.change(screen.getByLabelText("Correct Answer Index:"), {
+    target: { value: mockNewQuestion.correctIndex.toString() },
+  });
+
+  fireEvent.click(screen.getByText("Add Question"));
+
+  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+  expect(screen.getByText("What is React?")).toBeInTheDocument();
 });
