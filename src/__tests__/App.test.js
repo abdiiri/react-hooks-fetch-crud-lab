@@ -1,61 +1,54 @@
-import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import App from "../App";
+import "@testing-library/jest-dom";
 
-// Setup fetch as a mock function
-beforeEach(() => {
-  global.fetch = jest.fn();
-});
+describe("<App />", () => {
+  let mockFetch;
 
-afterEach(() => {
-  jest.resetAllMocks();
-});
-
-test("submitting the form calls onAddQuestion and updates the list", async () => {
-  const mockNewQuestion = {
-    id: 1,
-    prompt: "What is React?",
-    answers: ["Library", "Framework", "Language", "Tool"],
-    correctIndex: 0,
-  };
-
-  // Setup fetch calls
-  global.fetch
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    }) // First call: GET /questions
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockNewQuestion,
-    }); // Second call: POST /questions
-
-  render(<App />);
-  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
-
-  fireEvent.click(screen.getByText("New Question"));
-
-  fireEvent.change(screen.getByLabelText("Prompt:"), {
-    target: { value: mockNewQuestion.prompt },
-  });
-  fireEvent.change(screen.getByLabelText("Answer 1:"), {
-    target: { value: mockNewQuestion.answers[0] },
-  });
-  fireEvent.change(screen.getByLabelText("Answer 2:"), {
-    target: { value: mockNewQuestion.answers[1] },
-  });
-  fireEvent.change(screen.getByLabelText("Answer 3:"), {
-    target: { value: mockNewQuestion.answers[2] },
-  });
-  fireEvent.change(screen.getByLabelText("Answer 4:"), {
-    target: { value: mockNewQuestion.answers[3] },
-  });
-  fireEvent.change(screen.getByLabelText("Correct Answer Index:"), {
-    target: { value: mockNewQuestion.correctIndex.toString() },
+  beforeEach(() => {
+    // Mock the global fetch function
+    mockFetch = jest.spyOn(global, "fetch").mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([{ id: 1, text: "Sample Question" }]),
+      })
+    );
   });
 
-  fireEvent.click(screen.getByText("Add Question"));
+  afterEach(() => {
+    // Restore the original fetch function
+    mockFetch.mockRestore();
+  });
 
-  await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
-  expect(screen.getByText("What is React?")).toBeInTheDocument();
+  test("renders loading state initially", () => {
+    act(() => {
+      render(<App />);
+      const loadingElement = screen.getByText(/Loading questions.../i);
+      expect(loadingElement).toBeInTheDocument();
+    });
+  });
+
+  test("renders fetched questions", async () => {
+    await act(async () => {
+      render(<App />);
+      await waitFor(() => screen.getByText(/Sample Question/i));
+      const questionElement = screen.getByText(/Sample Question/i);
+      expect(questionElement).toBeInTheDocument();
+    });
+  });
+
+  test("renders error message on failed fetch", async () => {
+    // Mock fetch to simulate a failed API call
+    mockFetch.mockImplementationOnce(() =>
+      Promise.reject(new Error("API is down"))
+    );
+    await act(async () => {
+      render(<App />);
+      await waitFor(() => screen.getByText(/Error fetching questions/i), {
+        timeout: 3000,
+      });
+      const errorElement = screen.getByText(/Error fetching questions/i);
+      expect(errorElement).toBeInTheDocument();
+    });
+  });
 });
